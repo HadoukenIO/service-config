@@ -1,0 +1,20 @@
+{
+  "name": "service-config",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node src/fileCopy.js",
+    "clean": "rimraf dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^12.0.8",
+    "@types/openfin": "^41.0.0",
+    "fs-extra": "^8.0.1",
+    "hadouken-js-adapter": "^0.42.2",
+    "rimraf": "^2.6.3",
+    "typescript": "3.3.4000"
+  }
+}

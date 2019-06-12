@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs",
+        "noEmitOnError": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "pretty": true,
+        "strict": true,
+        "target": "es2017",
+        "lib": ["dom", "es2017"],
+        "types": ["node"],
+        "jsx": "react",
+        "declaration": false,
+        "moduleResolution": "node",
+        "sourceMap": false,
+        "rootDir": "src",
+        "outDir": "dist",
+        "esModuleInterop": false
+    },
+    "include": [
+        "src"
+    ]
+}
