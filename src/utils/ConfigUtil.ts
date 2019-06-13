@@ -322,6 +322,7 @@ export class ConfigUtil {
                     return maskObj[key] && value.hasOwnProperty(key);
                 } else if (type === 'object') {
                     // Recurse into sub-mask, unless property doesn't exist within value
+                    // @ts-ignore
                     return value.hasOwnProperty(key) ? this.matchesMask(value[key], maskObj[key]) : false;
                 } else {
                     console.warn('Unexpected value found within mask:', mask, key);
@@ -358,7 +359,7 @@ export class ConfigUtil {
                 (target[key] as {}) = {};
             }
 
-            // tslint:disable-next-line:no-any
+            //@ts-ignore Expression produces a union type that is too complex to represent.
             ConfigUtil.deepAssignMask<any, any>(target[key], value[key], typeof mask === 'object' ? mask[key] : mask);
         }
     }
