@@ -1,6 +1,7 @@
 /**
  * Helper build utility to copy non-built files to the dist directory.  This itself file is not included in the distributed project.
  */
+
 const path = require('path');
 
 const fs = require('fs-extra');

@@ -6,7 +6,7 @@ import {Fin} from 'hadouken-js-adapter';
 
 import {_Window} from 'hadouken-js-adapter/out/types/src/api/window/window';
 
-import {ApplicationScope, Scope} from './ScopesNRules';
+import {ApplicationScope, Scope} from './Types';
 
 import {ConfigUtil} from './utils/ConfigUtil';
 import {ConfigWithRules, ScopedConfig, Store} from './Store';

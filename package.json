@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && node src/fileCopy.js",
+    "build": "npm run clean && tsc -p tsconfig.json && node src/fileCopy.js",
     "clean": "rimraf dist"
   },
   "author": "",

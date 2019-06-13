@@ -1,4 +1,4 @@
-import {ApplicationScope, RegEx, Rule, Scope, WindowScope} from '../ScopesNRules';
+import {ApplicationScope, RegEx, Rule, Scope, WindowScope} from '../Types';
 
 /**
  * Defines the relative precedence of each available scope. The names of the constants match the `Scopes` type (and it

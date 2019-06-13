@@ -1,4 +1,4 @@
-import {Rule, Scope} from './ScopesNRules';
+import {Rule, Scope} from './Types';
 import {Signal2} from './Signal';
 
 import {ConfigUtil, Mask} from './utils/ConfigUtil';

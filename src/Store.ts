@@ -1,4 +1,4 @@
-import {Rule, Scope} from './ScopesNRules';
+import {Rule, Scope} from './Types';
 
 import {ConfigUtil, Mask, Masked, RequiredRecursive, ScopePrecedence} from './utils/ConfigUtil';
 import {Watch} from './Watch';

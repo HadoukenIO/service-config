@@ -14,7 +14,7 @@
         "lib": ["dom", "es2017"],
         "types": ["node"],
         "jsx": "react",
-        "declaration": false,
+        "declaration": true,
         "moduleResolution": "node",
         "sourceMap": false,
         "rootDir": "src",
