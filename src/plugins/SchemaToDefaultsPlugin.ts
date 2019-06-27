@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import {BasePlugin} from 'openfin-service-tooling/plugins/BasePlugin';
+import {BasePlugin} from 'openfin-service-tooling/webpack/plugins/BasePlugin';
 
 /**
  * Ancient module with no types!
@@ -18,14 +18,23 @@ export class SchemaToDefaultsPlugin extends BasePlugin<{}> {
         super('SchemaToDefaultsPlugin', ".json", options);
     }
 
-    async run() {
-        await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
-            console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
-            
-            const output = this.getDefaults(schemaFilename);
-            const outputPath = this.getOutputPath(schemaFilename);
-            await this.writeFile(outputPath, JSON.stringify(output, null, 4));
-        }));
+    /**
+     * Runs the plugin. 
+     * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
+     */
+    async run(action?: string) {
+        switch(action) {
+            case "generate":
+            case undefined: {
+                await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
+                    console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
+                    
+                    const output = this.getDefaults(schemaFilename);
+                    const outputPath = this.getOutputPath(schemaFilename);
+                    await this.writeFile(outputPath, JSON.stringify(output, null, 4));
+                }));
+            }
+        }
     }
 
     getDefaults(schemaFilename: string) {

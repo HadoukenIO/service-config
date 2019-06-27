@@ -1,7 +1,7 @@
 import * as path from 'path';
 import {compileFromFile} from 'json-schema-to-typescript';
 
-import {BasePlugin, PluginOptions} from 'openfin-service-tooling/plugins/BasePlugin';
+import {BasePlugin, PluginOptions} from 'openfin-service-tooling/webpack/plugins/BasePlugin';
 
 type SchemaToTypeScriptOptions = {
     schemaRoot: string;
@@ -19,13 +19,22 @@ export class SchemaToTypeScriptPlugin extends BasePlugin<PluginOptions<SchemaToT
         });
     }
 
-    async run() {
-        await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
-            console.log(`Generating TypeScript definitions for ${path.basename(schemaFilename)}`);
-            
-            const output = await compileFromFile(schemaFilename, {cwd: this.options.schemaRoot});
-            const outputPath = this.getOutputPath(schemaFilename);
-            await this.writeFile(outputPath, output);
-        }));
+    /**
+     * Runs the plugin. 
+     * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
+     */
+    async run(action?: string) {
+        switch(action) {
+            case "generate":
+            case undefined: {
+                await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
+                    console.log(`Generating TypeScript definitions for ${path.basename(schemaFilename)}`);
+                    
+                    const output = await compileFromFile(schemaFilename, {cwd: this.options.schemaRoot});
+                    const outputPath = this.getOutputPath(schemaFilename);
+                    await this.writeFile(outputPath, output);
+                }));
+            }
+        }
     }
 }

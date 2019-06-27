@@ -1,4 +1,9 @@
-import {Loader} from './Loader';
-import {Store} from './Store';
+import {SchemaToDefaultsPlugin} from './plugins/SchemaToDefaultsPlugin';
+import {SchemaToTypeScriptPlugin} from './plugins/SchemaToTypeScriptPlugin';
 
-export {Loader, Store};
+const plugins = {
+    SchemaToDefaultsPlugin,
+    SchemaToTypeScriptPlugin
+};
+
+export {plugins};
