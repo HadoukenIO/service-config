@@ -12,21 +12,14 @@ const defaults = require('json-schema-defaults');
  * 
  * Any top-level 'rules' object will be stripped-out of the generated JSON, as the 'rules' property has
  * special significance and isn't a part of the actual service-specific set of config options.
- * 
- * Supported options:
- * - outputPath: string
- *   Where to write generated .json files to (one file per input), either a filename or a directory.
- *   If a directory, filenames will be appended based on the input file with the extension changed.
- * - input: string|string[]
- *   The JSON Schema file(s) to generate TypeScript definitions for.
  */
-export class SchemaToDefaultsPlugin extends BasePlugin {
+export class SchemaToDefaultsPlugin extends BasePlugin<{}> {
     constructor(options: any) {
         super('SchemaToDefaultsPlugin', ".json", options);
     }
 
     async run() {
-        await Promise.all(this.options.input.map(async (schemaFilename: string) => {
+        await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
             console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
             
             const output = this.getDefaults(schemaFilename);
