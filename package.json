@@ -1,11 +1,12 @@
 {
-  "name": "service-config",
+  "name": "openfin-service-config",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json && node src/fileCopy.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "deploy:local": "npm run build && cd dist && npm pack"
   },
   "author": "",
   "license": "ISC",
@@ -15,7 +16,8 @@
     "fs-extra": "^8.0.1",
     "hadouken-js-adapter": "^0.42.2",
     "rimraf": "^2.6.3",
-    "typescript": "3.5.1"
+    "typescript": "3.5.1",
+    "openfin-service-tooling": "file:../service-tooling/dist/openfin-service-tooling-1.0.20.tgz"
   },
   "peerDependencies": {
     "openfin-service-tooling": "^1.0.11"

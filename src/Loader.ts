@@ -8,7 +8,7 @@ import {_Window} from 'hadouken-js-adapter/out/types/src/api/window/window';
 
 import {ApplicationScope, Scope} from './Types';
 
-import {ConfigUtil} from './utils/ConfigUtil';
+import {ConfigUtil} from './ConfigUtil';
 import {ConfigWithRules, ScopedConfig, Store} from './Store';
 import {SourceWatch} from './Watch';
 

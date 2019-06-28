@@ -1,7 +1,7 @@
 import {Rule, Scope} from './Types';
 import {Signal2} from './Signal';
 
-import {ConfigUtil, Mask} from './utils/ConfigUtil';
+import {ConfigUtil, Mask} from './ConfigUtil';
 import {ScopedConfig, Store, StoredConfig} from './Store';
 
 /**
