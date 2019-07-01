@@ -1,8 +1,8 @@
 {
   "name": "openfin-service-config",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "Store.js",
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json && node src/fileCopy.js",
     "clean": "rimraf dist",
