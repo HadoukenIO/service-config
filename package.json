@@ -17,7 +17,7 @@
     "hadouken-js-adapter": "^0.42.2",
     "rimraf": "^2.6.3",
     "typescript": "3.5.1",
-    "openfin-service-tooling": "file:../service-tooling/dist/openfin-service-tooling-1.0.20.tgz"
+    "openfin-service-tooling": "^1.0.11"
   },
   "peerDependencies": {
     "openfin-service-tooling": "^1.0.11"
