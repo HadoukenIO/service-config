@@ -23,17 +23,14 @@ export class SchemaToDefaultsPlugin extends BasePlugin<{}> {
      * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
      */
     async run(action?: string) {
-        switch(action) {
-            case "generate":
-            case undefined: {
-                await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
-                    console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
-                    
-                    const output = this.getDefaults(schemaFilename);
-                    const outputPath = this.getOutputPath(schemaFilename);
-                    await this.writeFile(outputPath, JSON.stringify(output, null, 4));
-                }));
-            }
+        if(!action || action.toUpperCase() === "GENERATE") {
+            await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
+                console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
+                
+                const output = this.getDefaults(schemaFilename);
+                const outputPath = this.getOutputPath(schemaFilename);
+                await this.writeFile(outputPath, JSON.stringify(output, null, 4));
+            }));
         }
     }
 
