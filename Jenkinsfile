@@ -18,7 +18,7 @@ pipeline {
                 sh "echo ${GIT_SHORT_SHA} > ./dist/SHA.txt"
                 
                 dir('./dist'){                   
-                    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+                    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE_2", variable: 'NPM_TOKEN')]) {
                         sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/dist/.npmrc"
                     }
                     
@@ -45,7 +45,7 @@ pipeline {
                 sh "echo ${GIT_SHORT_SHA} > ./dist/SHA.txt"
 
                 dir('./dist') {
-                    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+                    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE_2", variable: 'NPM_TOKEN')]) {
                         sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/dist/.npmrc"
                     }
                     

@@ -24,17 +24,14 @@ export class SchemaToTypeScriptPlugin extends BasePlugin<PluginOptions<SchemaToT
      * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
      */
     async run(action?: string) {
-        switch(action) {
-            case "generate":
-            case undefined: {
-                await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
-                    console.log(`Generating TypeScript definitions for ${path.basename(schemaFilename)}`);
-                    
-                    const output = await compileFromFile(schemaFilename, {cwd: this.options.schemaRoot});
-                    const outputPath = this.getOutputPath(schemaFilename);
-                    await this.writeFile(outputPath, output);
-                }));
-            }
+        if(!action || action.toUpperCase() === "GENERATE"){
+            await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
+                console.log(`Generating TypeScript definitions for ${path.basename(schemaFilename)}`);
+                
+                const output = await compileFromFile(schemaFilename, {cwd: this.options.schemaRoot});
+                const outputPath = this.getOutputPath(schemaFilename);
+                await this.writeFile(outputPath, output);
+            }));
         }
     }
 }
