@@ -89,8 +89,7 @@ beforeEach(() => {
     spyConsole = addConsoleSpies();
 
     jest.restoreAllMocks();
-    // @ts-ignore Complex types cant be represented.  All is working.
-    store = new Store(defaults);
+    store = new Store<Config>(defaults);
 });
 
 afterEach(() => {
@@ -374,7 +373,7 @@ describe('When adding a scope-based watch', () => {
     let onRemoveProxy: jest.Mock<void, WatchCallbackParams>;
 
     beforeEach(() => {
-        watch = new ScopeWatch(store, {level: 'application', uuid: 'my-app'});
+        watch = new ScopeWatch<Config>(store, {level: 'application', uuid: 'my-app'});
         watch.onAdd.add(onAddProxy = jest.fn((a, b) => {}));
         watch.onRemove.add(onRemoveProxy = jest.fn((a, b) => {}));
 
@@ -439,7 +438,7 @@ describe('When adding a mask-based watch', () => {
     let onRemoveProxy: jest.Mock<void, any>;
 
     beforeEach(() => {
-        watch = new MaskWatch(store, mask);
+        watch = new MaskWatch<Config, typeof mask>(store, mask);
         watch.onAdd.add(onAddProxy = jest.fn((a, b) => {}));
         watch.onRemove.add(onRemoveProxy = jest.fn((a, b) => {}));
 

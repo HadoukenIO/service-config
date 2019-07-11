@@ -4,7 +4,7 @@
   "description": "",
   "main": "Store.js",
   "scripts": {
-    "build": "npm run clean && tsc -p tsconfig.json && npm run test && node src/fileCopy.js",
+    "build": "npm run clean && tsc -p tsconfig.json && node src/fileCopy.js",
     "clean": "rimraf dist",
     "deploy:local": "npm run build && cd dist && npm pack",
     "test": "svc-tools test unit"

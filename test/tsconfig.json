@@ -15,8 +15,7 @@
       "**/*.ts"
     ],
     "exclude": [
-      "../node_modules",
-      "**/*.unittest.ts"
+      "../node_modules"
     ]
   }
   

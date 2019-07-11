@@ -59,8 +59,8 @@ function createAppWithConfig(uuid: string, config: Partial<ConfigWithRules<Confi
 }
 
 beforeEach(() => {
-        store = new Store<Config>(defaults);
-        loader = new Loader<Config>(store, 'testService');
+    store = new Store<Config>(defaults);
+    loader = new Loader<Config>(store, 'testService');
 });
 
 it('Config is loaded from an application\'s manifest', async () => {

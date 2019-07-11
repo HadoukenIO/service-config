@@ -86,16 +86,32 @@ class FakeApplication extends EventEmitter {
     private _parentUuid: string|undefined;
     private _manifest: any;
     private _state: AppState = {isRunning: true};
-
+    
     constructor(identity: Identity, manifest: any) {
         super();
-
+        
         this._identity = identity;
         this._manifest = manifest;
-
+        
         this.createChildWindow(this._identity.name);
     }
-
+    
+    public get parentUuid() {
+        return this._parentUuid;
+    }
+    
+    public get identity() {
+        return this._identity;
+    }
+    
+    public get me() {
+        return this._identity;
+    }
+    
+    public get state() {
+        return this._state;
+    }
+    
     private updateState(state: AppState) {
         this._state = Object.assign(this._state, state);
     }
@@ -131,21 +147,6 @@ class FakeApplication extends EventEmitter {
         this.emit('closed', {type: "closed", topic: "application", uuid: this._identity.uuid});
     }
     
-    public get parentUuid() {
-        return this._parentUuid;
-    }
-
-    public get identity() {
-        return this._identity;
-    }
-
-    public get me() {
-        return this._identity;
-    }
-
-    public get state() {
-        return this._state;
-    }
 }
 
 class FakeWindow extends EventEmitter {
