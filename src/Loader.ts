@@ -87,7 +87,7 @@ export class Loader<T> {
         this._appParentMap = {};
 
         this._windowsWithConfig = [];
-        this._watch = new SourceWatch(this._store, {level: 'window', uuid: {expression: '.*'}, name: {expression: '.*'}});
+        this._watch = new SourceWatch<T>(this._store, {level: 'window', uuid: {expression: '.*'}, name: {expression: '.*'}});
         this._watch.onAdd.add(this.onConfigAddedFromWindow, this);
 
         // Pre-bind fin callback functions
@@ -147,7 +147,6 @@ export class Loader<T> {
             // Do not parse the manifest of the service itself
             return;
         }
-
         app.getInfo().then((info: ApplicationInfo) => {
             const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
             const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
@@ -241,7 +240,6 @@ export class Loader<T> {
 
             // Unload this application's config, unless it may be required by another application
             this.cleanUpApplicationConfig(state);
-
             let parent = state;
             while (parent.parent && !parent.parent.isRunning) {
                 parent = parent.parent;

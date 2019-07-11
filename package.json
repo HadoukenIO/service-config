@@ -14,6 +14,7 @@
   "devDependencies": {
     "@types/node": "^12.0.8",
     "@types/openfin": "^41.0.0",
+    "deepmerge": "^4.0.0",
     "fs-extra": "^8.0.1",
     "hadouken-js-adapter": "^0.42.2",
     "openfin-service-tooling": "^1.0.11",
