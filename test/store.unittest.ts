@@ -1,7 +1,6 @@
 import {ScopedConfig, Store} from '../src/Store';
 import {RequiredRecursive} from '../src/ConfigUtil';
 import {MaskWatch, ScopeWatch} from '../src/Watch';
-
 import {Scope} from '../src/Types';
 
 import {addConsoleSpies, ConsoleSpy} from './utils/console';

@@ -1,8 +1,9 @@
-import {fin} from './utils/fin';
 import {Loader} from '../src/Loader';
 import {Store, ConfigWithRules} from '../src/Store';
+import {RequiredRecursive} from '../src/ConfigUtil';
+
 import {delay} from './utils/delay';
-import { RequiredRecursive } from '../src/ConfigUtil';
+import {fin} from './utils/fin';
 import assert = require('assert');
 
 let store: Store<Config>;
@@ -44,13 +45,13 @@ const defaults: RequiredRecursive<Config> = {
         featureThree: true
     },
     theme: {
-        color: "red",
+        color: 'red',
         border: 5
     }
 };
 
 function createAppWithConfig(uuid: string, config: Partial<ConfigWithRules<Config>>, parentUuid?: string) {
-    if(parentUuid) {
+    if (parentUuid) {
         const parentApp = fin.Application.wrapSync({uuid: parentUuid});
         return parentApp.createChildApp({uuid});
     } else {
@@ -120,7 +121,9 @@ it('If an application creates a child application, the config of the parent appl
 it('If an application creates a child application, the parent can apply rules to the child that still apply after the parent exits', async () => {
     const childAppUuid = createUuid();
 
-    const app = await createAppWithConfig(createUuid(), {enabled: false, rules: [{scope: {level: "application", uuid: childAppUuid}, config: {features: {featureOne: false}}}]});
+    const app = await createAppWithConfig(createUuid(), {enabled: false,
+        rules: [{scope: {level: 'application', uuid: childAppUuid}, config: {features: {featureOne: false}}}]
+    });
     const childApp = createAppWithConfig(childAppUuid, {}, app.identity.uuid);
 
     const childWindow = childApp.createChildWindow('child-window-1');
@@ -132,7 +135,7 @@ it('If an application creates a child application, the parent can apply rules to
     await app.close();
     await delay(10);
 
-    assert.strictEqual(getWindowConfig(store, childApp.identity).features.featureOne, false)
+    assert.strictEqual(getWindowConfig(store, childApp.identity).features.featureOne, false);
     assert.strictEqual(getWindowConfig(store, childWindow.identity).features.featureOne, false);
 });
 

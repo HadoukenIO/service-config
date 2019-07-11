@@ -3,11 +3,9 @@ import {ApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/application
 import {ApplicationEvent, WindowEvent} from 'hadouken-js-adapter/out/types/src/api/events/base';
 import {ApplicationInfo as SystemApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/system/application';
 import {Fin} from 'hadouken-js-adapter';
-
 import {_Window} from 'hadouken-js-adapter/out/types/src/api/window/window';
 
 import {ApplicationScope, Scope} from './Types';
-
 import {ConfigUtil} from './ConfigUtil';
 import {ConfigWithRules, ScopedConfig, Store} from './Store';
 import {SourceWatch} from './Watch';
