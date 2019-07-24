@@ -15,11 +15,13 @@
     "@types/openfin": "^41.0.0",
     "fs-extra": "^8.0.1",
     "hadouken-js-adapter": "^0.42.2",
+    "openfin-service-signal": "^1.0.0",
+    "openfin-service-tooling": "^1.0.11",
     "rimraf": "^2.6.3",
-    "typescript": "3.5.1",
-    "openfin-service-tooling": "^1.0.11"
+    "typescript": "3.5.1"
   },
   "peerDependencies": {
+    "openfin-service-signal": "^1.0.0",
     "openfin-service-tooling": "^1.0.11"
   },
   "dependencies": {

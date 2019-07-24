@@ -1,5 +1,5 @@
 import {Rule, Scope} from './Types';
-import {Signal2} from './Signal';
+import {Signal} from 'openfin-service-signal';
 
 import {ConfigUtil, Mask} from './ConfigUtil';
 import {ScopedConfig, Store, StoredConfig} from './Store';
@@ -25,7 +25,7 @@ export abstract class Watch<T> {
      *
      * Arguments: (rule: ScopedConfig<T>, source: Scope)
      */
-    public readonly onAdd: Signal2<ScopedConfig<T>, Scope> = new Signal2();
+    public readonly onAdd = new Signal<[ScopedConfig<T>, Scope]>();
 
     /**
      * Signal fired whenever any config matching this watch is removed from the store.
@@ -36,7 +36,7 @@ export abstract class Watch<T> {
      *
      * Arguments: (rule: ScopedConfig<T>, source: Scope)
      */
-    public readonly onRemove: Signal2<ScopedConfig<T>, Scope> = new Signal2();
+    public readonly onRemove = new Signal<[ScopedConfig<T>, Scope]>();
 
     protected _store: Store<T>;
 
