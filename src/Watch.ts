@@ -25,7 +25,7 @@ export abstract class Watch<T> {
      *
      * Arguments: (rule: ScopedConfig<T>, source: Scope)
      */
-    public readonly onAdd = new Signal<[ScopedConfig<T>, Scope]>();
+    public readonly onAdd: Signal<[ScopedConfig<T>, Scope]> = new Signal();
 
     /**
      * Signal fired whenever any config matching this watch is removed from the store.
@@ -36,7 +36,7 @@ export abstract class Watch<T> {
      *
      * Arguments: (rule: ScopedConfig<T>, source: Scope)
      */
-    public readonly onRemove = new Signal<[ScopedConfig<T>, Scope]>();
+    public readonly onRemove: Signal<[ScopedConfig<T>, Scope]> = new Signal();
 
     protected _store: Store<T>;
 
