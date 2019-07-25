@@ -8,7 +8,8 @@
     "check": "svc-tools check",
     "clean": "rimraf dist",
     "deploy:local": "npm run build && cd dist && npm pack",
-    "test": "svc-tools test unit",
+    "test:unit": "svc-tools test unit",
+    "test": "npm run test:unit",
     "fix": "svc-tools fix"
     
   },
