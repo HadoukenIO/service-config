@@ -10,7 +10,7 @@ import {addConsoleSpies, ConsoleSpy} from './utils/console';
  *
  * In real usage, this would come from a JSON schema.
  */
-interface Config {
+interface ConfigTemplate {
     // Generic properties of each primitive type
     bool?: boolean;
     num?: number;
@@ -39,6 +39,8 @@ interface Config {
     };
 }
 
+type Config = RequiredRecursive<ConfigTemplate>;
+
 /**
  * To reduce verbosity of tests, pre-define scopes that can be used for defining rules and querying the store.
  */
@@ -64,10 +66,10 @@ const scopes = {
 /**
  * Parameters of the callbacks added to the `onAdd` and `onRemove` signals of a `Watch` object.
  */
-type WatchCallbackParams = [ScopedConfig<Config>, Scope];
+type WatchCallbackParams = [ScopedConfig<ConfigTemplate>, Scope];
 
-let store: Store<Config>;
-const defaults: RequiredRecursive<Config> = {
+let store: Store<ConfigTemplate>;
+const defaults: Config = {
     bool: true,
     num: 0,
     str: '',
@@ -88,7 +90,7 @@ beforeEach(() => {
     spyConsole = addConsoleSpies();
 
     jest.restoreAllMocks();
-    store = new Store<Config>(defaults);
+    store = new Store<ConfigTemplate>(defaults);
 });
 
 afterEach(() => {
@@ -367,12 +369,12 @@ describe('When removing config of a specific scope', () => {
 describe('When adding a scope-based watch', () => {
     const config = {bool: true};
 
-    let watch: ScopeWatch<Config>;
+    let watch: ScopeWatch<ConfigTemplate>;
     let onAddProxy: jest.Mock<void, WatchCallbackParams>;
     let onRemoveProxy: jest.Mock<void, WatchCallbackParams>;
 
     beforeEach(() => {
-        watch = new ScopeWatch<Config>(store, {level: 'application', uuid: 'my-app'});
+        watch = new ScopeWatch<ConfigTemplate>(store, {level: 'application', uuid: 'my-app'});
         watch.onAdd.add(onAddProxy = jest.fn((a, b) => {}));
         watch.onRemove.add(onRemoveProxy = jest.fn((a, b) => {}));
 
@@ -432,12 +434,12 @@ describe('When adding a scope-based watch', () => {
 
 describe('When adding a mask-based watch', () => {
     const mask = {features: {dock: true}};
-    let watch: MaskWatch<Config, typeof mask>;
+    let watch: MaskWatch<ConfigTemplate, typeof mask>;
     let onAddProxy: jest.Mock<void, any>;
     let onRemoveProxy: jest.Mock<void, any>;
 
     beforeEach(() => {
-        watch = new MaskWatch<Config, typeof mask>(store, mask);
+        watch = new MaskWatch<ConfigTemplate, typeof mask>(store, mask);
         watch.onAdd.add(onAddProxy = jest.fn((a, b) => {}));
         watch.onRemove.add(onRemoveProxy = jest.fn((a, b) => {}));
 
