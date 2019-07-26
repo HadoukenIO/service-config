@@ -33,7 +33,7 @@ export const fin = {
         create: async (identity: Identity, manifest: any, parentUuid?: string): Promise<FakeApplication> => {
             const sanitizedIdentity = {uuid: identity.uuid, name: identity.name || identity.uuid};
 
-            if (!manifest.startup_app || (manifest.startup_app && (!manifest.startup_app.uuid || !manifest.startup_app.name))){
+            if (!manifest.startup_app || (manifest.startup_app && (!manifest.startup_app.uuid || !manifest.startup_app.name))) {
                 manifest = deepmerge(manifest, {
                     startup_app: sanitizedIdentity
                 });
@@ -57,7 +57,7 @@ export const fin = {
         wrapSync: (identity: Identity): FakeApplication => {
             const app = apps.get(identity.uuid);
 
-            if (app){
+            if (app) {
                 return app;
             } else {
                 throw new Error(`App ${identity.uuid} / ${identity.name} does not exist.`);
@@ -71,7 +71,7 @@ export const fin = {
             if (app) {
                 const window = app.getWindows().get(identity.name);
 
-                if (window){
+                if (window) {
                     return window;
                 } else {
                     return app.createChildWindow(identity.name);
