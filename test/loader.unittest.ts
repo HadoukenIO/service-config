@@ -74,7 +74,7 @@ it('Config is loaded from an application\'s manifest', async () => {
     await delay(Duration.STORE_LOADING);
 
     // Config specifies that window shouldn't be registered
-    const config: Config = await getWindowConfig(store, app.identity);
+    const config: Config = getWindowConfig(store, app.identity);
 
     await assert.strictEqual(config.enabled, false);
 });
