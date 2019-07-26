@@ -81,7 +81,7 @@ interface AppState {
     isRunning: boolean;
 }
 
-class FakeApplication extends EventEmitter {
+export class FakeApplication extends EventEmitter {
     private _identity: Identity;
     private _windows: Map<String, FakeWindow> = new Map<String, FakeWindow>();
     private _parentUuid: string|undefined;
@@ -149,7 +149,7 @@ class FakeApplication extends EventEmitter {
     }
 }
 
-class FakeWindow extends EventEmitter {
+export class FakeWindow extends EventEmitter {
     private _identity: Identity;
     private _parentUuid: string;
 
