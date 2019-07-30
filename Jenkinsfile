@@ -3,6 +3,22 @@ pipeline {
     agent { label 'linux-slave' }
 
     stages {
+        stage('Test') {
+            stage('Unit Tests') {
+                agent { label 'linux-slave' }
+                steps {
+                    sh "npm install"
+                    sh "npm run test:unit -- --noColor -x \"--no-cache --verbose\""
+                    sh "npm run check"
+                }
+                post {
+                    always {
+                        junit "dist/test/results-unit.xml"
+                    }
+                }
+            }
+        }
+    
         stage('Build & Deploy (Staging)') {
             agent { label 'linux-slave' }
             when { branch "develop" }

@@ -1,6 +1,6 @@
-import {Rule, Scope} from './Types';
 import {Signal} from 'openfin-service-signal';
 
+import {Rule, Scope} from './Types';
 import {ConfigUtil, Mask} from './ConfigUtil';
 import {ScopedConfig, Store, StoredConfig} from './Store';
 

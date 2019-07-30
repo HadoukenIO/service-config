@@ -5,7 +5,7 @@ export type Scope = ApplicationScope | WindowScope | OtherScope;
  * A rule targeting an application (or set of applications) by UUID.
  */
 export interface ApplicationRule {
-  level: "application";
+  level: 'application';
   uuid: string | RegEx;
 }
 /**
@@ -20,25 +20,25 @@ export interface RegEx {
  * A rule targeting a window (or set of windows) by UUID-Name pair.
  */
 export interface WindowRule {
-  level: "window";
+  level: 'window';
   uuid: string | RegEx;
   name: string | RegEx;
 }
 export interface OtherRule {
-  level: "service" | "desktop";
+  level: 'service' | 'desktop';
 }
 /**
  * A scope targeting a specific OpenFin application and all of its windows
  */
 export interface ApplicationScope {
-  level: "application";
+  level: 'application';
   uuid: string;
 }
 /**
  * A scope targeting a specific OpenFin window
  */
 export interface WindowScope {
-  level: "window";
+  level: 'window';
   uuid: string;
   name: string;
 }
@@ -46,5 +46,5 @@ export interface WindowScope {
  * A scope for all levels with no extra data required (e.g. desktop-level configuration)
  */
 export interface OtherScope {
-  level: "service" | "desktop";
+  level: 'service' | 'desktop';
 }
