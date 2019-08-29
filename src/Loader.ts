@@ -148,6 +148,7 @@ export class Loader<T> {
         app.getInfo().then((info: ApplicationInfo) => {
             const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
             const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
+            const foundServices: string[] = [];
             let parentUuid: string|undefined = info.parentUuid;
             let appConfig: ConfigWithRules<T>|null = null;
             let isServiceAware = false;
@@ -167,6 +168,8 @@ export class Loader<T> {
                     if (this._serviceNames.includes(service.name)) {
                         // App explicitly requests service, avoid adding any default config
                         isServiceAware = true;
+
+                        foundServices.push(service.name);
 
                         if (service.config) {
                             console.log(`Using config from ${identity.uuid}/${service.name}`);
@@ -217,10 +220,20 @@ export class Loader<T> {
             }
 
             // If there's config for this app (whether app-defined or default), add it to the store
-            if (appConfig) {
-                const state = this.getOrCreateAppState(app, isServiceAware);
-                this._store.add(state.scope, appConfig);
-            }
+            foundServices.forEach(serviceName => {
+                fin.System.getServiceConfiguration({name: serviceName}).then(config => {
+                    if (appConfig) {
+                        appConfig = Object.assign(appConfig, config);
+                    }
+                })
+                    .catch(() => {})
+                    .finally(() => {
+                        if (appConfig) {
+                            const state = this.getOrCreateAppState(app, isServiceAware);
+                            this._store.add(state.scope, appConfig);
+                        }
+                    });
+            });
         });
     }
 
