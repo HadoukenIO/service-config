@@ -38,13 +38,15 @@ interface AppState {
     isServiceAware: boolean;
 }
 
+type ServiceConfig<T> = ServiceConfiguration & {config: T};
+
 /**
  * Configuration loader, responsible for listening for application lifecycle events, and loading/unloading any
  * application-defined config to/from the store.
  */
 export class Loader<T> {
     private _store: Store<T>;
-    private _serviceNames: string[];
+    private _serviceName: string;
     private _defaultConfig: T|null;
 
     private _appState: {[uuid: string]: AppState};
@@ -84,9 +86,9 @@ export class Loader<T> {
      * @param serviceNames The name of the service, plus aliases if appropriate
      * @param defaultConfig Optionally, config to add to the store for any application that isn't service-aware
      */
-    constructor(store: Store<T>, serviceNames: string|string[], defaultConfig?: T) {
+    constructor(store: Store<T>, serviceName: string, defaultConfig?: T) {
         this._store = store;
-        this._serviceNames = Array.isArray(serviceNames) ? serviceNames.slice() : [serviceNames];
+        this._serviceName = serviceName;
         this._defaultConfig = defaultConfig || null;
         this._appState = {};
         this._appParentMap = {};
@@ -101,7 +103,7 @@ export class Loader<T> {
         this.onApplicationClosed = this.onApplicationClosed.bind(this);
         this.onWindowClosed = this.onWindowClosed.bind(this);
 
-        this.loadDesktopServiceConfigurations(this._serviceNames).then(async () => {
+        this.loadDesktopOwnerConfiguration().then(async () => {
             // Listen for any new windows created and register their config with the service
             fin.System.addListener('application-created', this.onApplicationCreated);
 
@@ -153,19 +155,23 @@ export class Loader<T> {
         return (state && state.parent && state.parent.scope.uuid) || undefined;
     }
 
-    private async loadDesktopServiceConfigurations(serviceNames: string[]): Promise<void> {
-        await Promise.all(serviceNames.map(async name => {
-            const serviceConfig: ServiceConfiguration | null = await fin.System.getServiceConfiguration({name}).catch(() => null);
+    private async loadDesktopOwnerConfiguration(): Promise<void> {
+        const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
+            .then(config => (config as ServiceConfig<T>).config).catch(() => null);
 
-            if (serviceConfig) {
-                // getServiceConfiguration gives us the config + an added name property which we don't need.
-                delete serviceConfig.name;
+        const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
+            .then(manifest => manifest.serviceConfiguration || null).catch(() => null);
 
-                // Cast to unknown because TS doesn't actually know what we will get back from the getServiceConfiguration() call,
-                // we can only assume it will match our schema.
-                this._store.add({level: 'desktop'}, serviceConfig as unknown as T);
-            }
-        }));
+        // Prefer service manifest over desktop owner file configs.
+        // Service configs are placed under a non-documented key so this should not be used in production.
+        if (desktopOwnerConfig && serviceConfig) {
+            console.warn('Found service config in Desktop Owner File and Service Manifest. Using Service Manifest config');
+            this._store.add({level: 'desktop'}, serviceConfig);
+        } else if (serviceConfig) {
+            this._store.add({level: 'desktop'}, serviceConfig);
+        } else if (desktopOwnerConfig) {
+            this._store.add({level: 'desktop'}, desktopOwnerConfig);
+        }
     }
 
     private async onApplicationCreated(identity: Identity): Promise<void> {
@@ -197,7 +203,7 @@ export class Loader<T> {
         if (isManifest && manifest.services && manifest.services.length) {
             // Check for service declaration within app manifest
             manifest.services.forEach((service: ServiceDeclaration<T>) => {
-                if (this._serviceNames.includes(service.name)) {
+                if (this._serviceName === service.name) {
                     // App explicitly requests service, avoid adding any default config
                     isServiceAware = true;
 
@@ -252,20 +258,10 @@ export class Loader<T> {
         }
 
         // If there's config for this app (whether app-defined or default), add it to the store
-        foundServices.forEach(serviceName => {
-            fin.System.getServiceConfiguration({name: serviceName}).then(config => {
-                if (appConfig) {
-                    appConfig = Object.assign(appConfig, config);
-                }
-            })
-                .catch(() => {})
-                .finally(() => {
-                    if (appConfig) {
-                        const state = this.getOrCreateAppState(app, isServiceAware);
-                        this._store.add(state.scope, appConfig);
-                    }
-                });
-        });
+        if (appConfig) {
+            const state = this.getOrCreateAppState(app, isServiceAware);
+            this._store.add(state.scope, appConfig);
+        }
     }
 
     private onApplicationClosed(event: ApplicationEvent<'application', 'closed'>): void {

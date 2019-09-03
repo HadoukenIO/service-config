@@ -1,6 +1,6 @@
 {
   "name": "openfin-service-config",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "Store.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "fs-extra": "^8.0.1",
     "hadouken-js-adapter": "^0.42.2",
     "openfin-service-signal": "^1.0.0",
-    "openfin-service-tooling": "^1.0.12",
+    "openfin-service-tooling": "^1.0.14",
     "rimraf": "^2.6.3",
     "typescript": "3.5.1"
   },
