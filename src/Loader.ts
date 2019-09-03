@@ -186,7 +186,6 @@ export class Loader<T> {
 
         const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
         const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
-        const foundServices: string[] = [];
         let parentUuid: string|undefined = info.parentUuid;
         let appConfig: ConfigWithRules<T>|null = null;
         let isServiceAware = false;
@@ -206,8 +205,6 @@ export class Loader<T> {
                 if (this._serviceName === service.name) {
                     // App explicitly requests service, avoid adding any default config
                     isServiceAware = true;
-
-                    foundServices.push(service.name);
 
                     if (service.config) {
                         console.log(`Using config from ${identity.uuid}/${service.name}`);
