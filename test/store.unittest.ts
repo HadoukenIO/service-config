@@ -100,7 +100,6 @@ afterEach(() => {
     expect(spyConsole.error).not.toBeCalled();
 });
 
-
 it('Immediately after initialisation, all scopes should return a full config object', () => {
     expect(store.query(scopes.service)).toEqual(defaults);
     expect(store.query(scopes.desktop)).toEqual(defaults);

@@ -3,6 +3,9 @@ import {EventEmitter} from 'events';
 import {Identity} from 'hadouken-js-adapter';
 import * as deepmerge from 'deepmerge';
 
+import {FakeApplication} from './FakeApplication';
+import {FakeWindow} from './FakeWindow';
+
 const emitter = new EventEmitter();
 const apps = new Map<String, FakeApplication>();
 
@@ -10,174 +13,116 @@ interface SystemAppInfo extends AppState, Identity {
     parentUuid: string;
 }
 
-export const fin = {
-    System: {
-        addListener: (event, listener): void => {
-            emitter.addListener(event, listener);
-        },
-        removeListener: (event, listener): void => {
-            emitter.removeListener(event, listener);
-        },
-        getAllApplications: async (): Promise<SystemAppInfo[]> => {
-            return Array.from(apps.values()).map(app => {
-                return {
-                    isRunning: app.state.isRunning,
-                    uuid: app.identity.uuid,
-                    parentUuid: app.parentUuid
-                };
-            });
-        }
-    },
-    Application: {
-        me: {uuid: '', name: ''},
-        create: async (identity: Identity, manifest: any, parentUuid?: string): Promise<FakeApplication> => {
-            const sanitizedIdentity = {uuid: identity.uuid, name: identity.name || identity.uuid};
-
-            if (!manifest.startup_app || (manifest.startup_app && (!manifest.startup_app.uuid || !manifest.startup_app.name))) {
-                manifest = deepmerge(manifest, {
-                    startup_app: sanitizedIdentity
-                });
-            }
-
-            if (!apps.has(identity.uuid)) {
-                const app = new FakeApplication(sanitizedIdentity, manifest);
-                apps.set(identity.uuid, app);
-
-                if (parentUuid) {
-                    app.setParentUuid(parentUuid);
-                }
-
-                emitter.emit('application-created', identity);
-
-                return app;
-            } else {
-                throw new Error(`Application with specified UUID already exists: ${identity.uuid}`);
-            }
-        },
-        wrapSync: (identity: Identity): FakeApplication => {
-            const app = apps.get(identity.uuid);
-
-            if (app) {
-                return app;
-            } else {
-                throw new Error(`App ${identity.uuid} / ${identity.name} does not exist.`);
-            }
-        }
-    },
-    Window: {
-        wrapSync: (identity: Identity): FakeWindow => {
-            const app = apps.get(identity.uuid);
-
-            if (app) {
-                const window = app.getWindows().get(identity.name);
-
-                if (window) {
-                    return window;
-                } else {
-                    return app.createChildWindow(identity.name);
-                }
-            } else {
-                throw new Error(`App ${identity.uuid} / ${identity.name} does not exist`);
-            }
-        }
-    }
-};
-
-interface AppInfo {
-    manifest: any;
-    parentUuid: string;
-}
-
 interface AppState {
     isRunning: boolean;
 }
 
-export class FakeApplication extends EventEmitter {
-    private readonly _identity: Identity;
-    private readonly _manifest: any;
-    private _windows: Map<string, FakeWindow> = new Map<string, FakeWindow>();
-    private _parentUuid: string|undefined;
-    private _state: AppState = {isRunning: true};
-
-    constructor(identity: Identity, manifest: any) {
-        super();
-
-        this._identity = identity;
-        this._manifest = manifest;
-
-        this.createChildWindow(this._identity.name);
+class FinSystem {
+    public addListener(event, listener): void {
+        emitter.addListener(event, listener);
     }
 
-    public get parentUuid(): string {
-        return this._parentUuid;
+    public removeListener(event, listener): void {
+        emitter.removeListener(event, listener);
     }
 
-    public get identity(): Identity {
-        return this._identity;
+    public async getAllApplications(): Promise<SystemAppInfo[]> {
+        return Array.from(apps.values()).map(app => {
+            return {
+                isRunning: app.state.isRunning,
+                uuid: app.identity.uuid,
+                parentUuid: app.parentUuid
+            };
+        });
     }
 
-    public get me(): Identity {
-        return this._identity;
-    }
-
-    public get state(): AppState {
-        return this._state;
-    }
-
-    private updateState(state: AppState) {
-        this._state = Object.assign(this._state, state);
-    }
-
-    public async getInfo(): Promise<AppInfo> {
+    public async getServiceConfiguration() {
         return {
-            manifest: this._manifest,
-            parentUuid: this._parentUuid
+            name: 'testService',
+            config: {
+                features: {
+                    featureOne: true,
+                    featureTwo: false,
+                    featureThree: true
+                }
+            }
         };
     }
+}
 
-    public createChildWindow(name: string): FakeWindow {
-        const window = new FakeWindow({uuid: this._identity.uuid, name});
-        this._windows.set(name, window);
+class FinApplication {
+    public me: Identity = {uuid: '', name: ''};
 
-        return window;
+    constructor() {
+        this.create({uuid: 'primaryApp', name: 'primaryApp'}, {
+            servicesConfiguration: {
+                configKey: 'configKeyValue'
+            }
+        });
     }
 
-    public async createChildApp(identity: Identity): Promise<FakeApplication> {
-        return fin.Application.create(identity, this._manifest, this._identity.uuid);
+    public async create(identity: Identity, manifest: any, parentUuid?: string): Promise<FakeApplication> {
+        const sanitizedIdentity = {uuid: identity.uuid, name: identity.name || identity.uuid};
+
+        if (!manifest.startup_app || (manifest.startup_app && (!manifest.startup_app.uuid || !manifest.startup_app.name))) {
+            manifest = deepmerge(manifest, {
+                startup_app: sanitizedIdentity
+            });
+        }
+
+        if (!apps.has(identity.uuid)) {
+            const app = new FakeApplication(sanitizedIdentity, manifest);
+            apps.set(identity.uuid, app);
+
+            if (parentUuid) {
+                app.setParentUuid(parentUuid);
+            }
+
+            emitter.emit('application-created', identity);
+
+            return app;
+        } else {
+            throw new Error(`Application with specified UUID already exists: ${identity.uuid}`);
+        }
     }
 
-    public getWindows(): Map<string, FakeWindow> {
-        return this._windows;
+    public wrapSync(identity: Identity): FakeApplication {
+        const app = apps.get(identity.uuid);
+
+        if (app) {
+            return app;
+        } else {
+            throw new Error(`App ${identity.uuid} / ${identity.name} does not exist.`);
+        }
     }
 
-    public setParentUuid(parentUuid: string): void {
-        this._parentUuid = parentUuid;
-    }
-
-    public async close(): Promise<void> {
-        this.updateState({isRunning: false});
-        this.emit('closed', {type: 'closed', topic: 'application', uuid: this._identity.uuid});
+    public getCurrentSync(): FakeApplication {
+        return this.wrapSync({uuid: 'primaryApp', name: 'primaryApp'});
     }
 }
 
-export class FakeWindow extends EventEmitter {
-    private readonly _identity: Identity;
-    private readonly _parentUuid: string;
+class FinWindow {
+    public wrapSync(identity: Identity): FakeWindow {
+        const app = apps.get(identity.uuid);
 
-    constructor(identity: Identity) {
-        super();
+        if (app) {
+            const window = app.getWindows().get(identity.name);
 
-        this._identity = identity;
-        this._parentUuid = identity.uuid;
-    }
-
-    public get identity(): Identity {
-        return this._identity;
-    }
-
-    public get parentUuid(): string {
-        return this._parentUuid;
+            if (window) {
+                return window;
+            } else {
+                return app.createChildWindow(identity.name);
+            }
+        } else {
+            throw new Error(`App ${identity.uuid} / ${identity.name} does not exist`);
+        }
     }
 }
+
+export const fin = {
+    System: new FinSystem,
+    Application: new FinApplication,
+    Window: new FinWindow
+};
 
 global['fin'] = fin;
