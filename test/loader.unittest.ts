@@ -7,7 +7,9 @@ import {Store, ConfigWithRules} from '../src/Store';
 import {RequiredRecursive} from '../src/ConfigUtil';
 
 import {delay, Duration} from './utils/delay';
-import {fin, FakeApplication, FakeWindow} from './utils/fin';
+import {fin} from './utils/fin';
+import {FakeApplication} from './utils/FakeApplication';
+import {FakeWindow} from './utils/FakeWindow';
 
 let store: Store<ConfigTemplate>;
 let loader: Loader<ConfigTemplate>;
@@ -77,6 +79,10 @@ it('Config is loaded from an application\'s manifest', async () => {
     const config: Config = getWindowConfig(store, app.identity);
 
     await assert.strictEqual(config.enabled, false);
+});
+
+it('Config is loaded from desktop owner file', async () => {
+    expect(store.query({level: 'desktop'}).features).toEqual({featureOne: true, featureTwo: false, featureThree: true});
 });
 
 it('Config is unloaded when the application exits', async () => {
