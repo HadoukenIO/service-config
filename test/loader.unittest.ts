@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import {Identity} from 'openfin/_v2/identity';
+import {Identity} from 'hadouken-js-adapter';
 
 import {Loader} from '../src/Loader';
 import {Store, ConfigWithRules} from '../src/Store';
