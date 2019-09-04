@@ -2,15 +2,15 @@ import {Application, Identity} from 'hadouken-js-adapter';
 import {ApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/application/application';
 import {ApplicationEvent, WindowEvent} from 'hadouken-js-adapter/out/types/src/api/events/base';
 import {ApplicationInfo as SystemApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/system/application';
+import {ServiceConfiguration} from 'hadouken-js-adapter/out/types/src/api/system/external-process';
 import {Fin} from 'hadouken-js-adapter';
-
 import {_Window} from 'hadouken-js-adapter/out/types/src/api/window/window';
 
 import {ApplicationScope, Scope} from './Types';
-
 import {ConfigUtil} from './ConfigUtil';
 import {ConfigWithRules, ScopedConfig, Store} from './Store';
 import {SourceWatch} from './Watch';
+import {DeferredPromise} from './DeferredPromise';
 
 declare const fin:Fin;
 
@@ -38,13 +38,15 @@ interface AppState {
     isServiceAware: boolean;
 }
 
+type ServiceConfig<T> = ServiceConfiguration & {config: T};
+
 /**
  * Configuration loader, responsible for listening for application lifecycle events, and loading/unloading any
  * application-defined config to/from the store.
  */
 export class Loader<T> {
     private _store: Store<T>;
-    private _serviceNames: string[];
+    private _serviceName: string;
     private _defaultConfig: T|null;
 
     private _appState: {[uuid: string]: AppState};
@@ -65,6 +67,11 @@ export class Loader<T> {
     private _windowsWithConfig: string[];
 
     /**
+     * Initialization indication flag to check that we have completely finished any async constructor operations.
+     */
+    private _initialized: DeferredPromise<void>;
+
+    /**
      * Creates a config loader.
      *
      * The loader needs to know the name of the service, so that it knows where to look within the application
@@ -79,15 +86,16 @@ export class Loader<T> {
      * @param serviceNames The name of the service, plus aliases if appropriate
      * @param defaultConfig Optionally, config to add to the store for any application that isn't service-aware
      */
-    constructor(store: Store<T>, serviceNames: string|string[], defaultConfig?: T) {
+    constructor(store: Store<T>, serviceName: string, defaultConfig?: T) {
         this._store = store;
-        this._serviceNames = Array.isArray(serviceNames) ? serviceNames.slice() : [serviceNames];
+        this._serviceName = serviceName;
         this._defaultConfig = defaultConfig || null;
         this._appState = {};
         this._appParentMap = {};
+        this._initialized = new DeferredPromise();
 
         this._windowsWithConfig = [];
-        this._watch = new SourceWatch(this._store, {level: 'window', uuid: {expression: '.*'}, name: {expression: '.*'}});
+        this._watch = new SourceWatch<T>(this._store, {level: 'window', uuid: {expression: '.*'}, name: {expression: '.*'}});
         this._watch.onAdd.add(this.onConfigAddedFromWindow, this);
 
         // Pre-bind fin callback functions
@@ -95,18 +103,25 @@ export class Loader<T> {
         this.onApplicationClosed = this.onApplicationClosed.bind(this);
         this.onWindowClosed = this.onWindowClosed.bind(this);
 
-        // Listen for any new windows created and register their config with the service
-        fin.System.addListener('application-created', this.onApplicationCreated);
+        this.loadDesktopOwnerConfiguration().then(async () => {
+            // Listen for any new windows created and register their config with the service
+            fin.System.addListener('application-created', this.onApplicationCreated);
 
-        // Register any windows created before the service started
-        fin.System.getAllApplications().then((apps: SystemApplicationInfo[]) => {
-            apps.forEach((app: SystemApplicationInfo) => {
+            const allApplications: SystemApplicationInfo[] = await fin.System.getAllApplications();
+
+            await Promise.all(allApplications.map(async app => {
                 if (app.isRunning) {
                     // Register the main window
-                    this.onApplicationCreated(app);
+                    await this.onApplicationCreated(app);
                 }
-            });
+            }));
+
+            this._initialized.resolve();
         });
+    }
+
+    public get initialized(): Promise<void> {
+        return this._initialized.promise;
     }
 
     /**
@@ -140,7 +155,26 @@ export class Loader<T> {
         return (state && state.parent && state.parent.scope.uuid) || undefined;
     }
 
-    private onApplicationCreated(identity: Identity): void {
+    private async loadDesktopOwnerConfiguration(): Promise<void> {
+        const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
+            .then(config => (config as ServiceConfig<T>).config).catch(() => null);
+
+        const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
+            .then(manifest => manifest.serviceConfiguration || null).catch(() => null);
+
+        // Prefer service manifest over desktop owner file configs.
+        // Service configs are placed under a non-documented key so this should not be used in production.
+        if (desktopOwnerConfig && serviceConfig) {
+            console.warn('Found service config in Desktop Owner File and Service Manifest. Using Service Manifest config');
+            this._store.add({level: 'desktop'}, serviceConfig);
+        } else if (serviceConfig) {
+            this._store.add({level: 'desktop'}, serviceConfig);
+        } else if (desktopOwnerConfig) {
+            this._store.add({level: 'desktop'}, desktopOwnerConfig);
+        }
+    }
+
+    private async onApplicationCreated(identity: Identity): Promise<void> {
         const app: Application = fin.Application.wrapSync(identity);
 
         if (identity.uuid === fin.Application.me.uuid) {
@@ -148,83 +182,83 @@ export class Loader<T> {
             return;
         }
 
-        app.getInfo().then((info: ApplicationInfo) => {
-            const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
-            const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
-            let parentUuid: string|undefined = info.parentUuid;
-            let appConfig: ConfigWithRules<T>|null = null;
-            let isServiceAware = false;
+        const info: ApplicationInfo = await app.getInfo();
 
-            // Override parent UUID if it's an app we have been expecting to start-up
-            const overrideParentUuid: string|undefined = this._appParentMap[identity.uuid];
-            if (overrideParentUuid) {
-                console.log(`Tracking ${identity.uuid} as having parent ${overrideParentUuid} over ${parentUuid}`);
+        const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
+        const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
+        let parentUuid: string|undefined = info.parentUuid;
+        let appConfig: ConfigWithRules<T>|null = null;
+        let isServiceAware = false;
 
-                parentUuid = overrideParentUuid;
-                delete this._appParentMap[identity.uuid];
-            }
+        // Override parent UUID if it's an app we have been expecting to start-up
+        const overrideParentUuid: string|undefined = this._appParentMap[identity.uuid];
+        if (overrideParentUuid) {
+            console.log(`Tracking ${identity.uuid} as having parent ${overrideParentUuid} over ${parentUuid}`);
 
-            if (isManifest && manifest.services && manifest.services.length) {
-                // Check for service declaration within app manifest
-                manifest.services.forEach((service: ServiceDeclaration<T>) => {
-                    if (this._serviceNames.includes(service.name)) {
-                        // App explicitly requests service, avoid adding any default config
-                        isServiceAware = true;
+            parentUuid = overrideParentUuid;
+            delete this._appParentMap[identity.uuid];
+        }
 
-                        if (service.config) {
-                            console.log(`Using config from ${identity.uuid}/${service.name}`);
+        if (isManifest && manifest.services && manifest.services.length) {
+            // Check for service declaration within app manifest
+            manifest.services.forEach((service: ServiceDeclaration<T>) => {
+                if (this._serviceName === service.name) {
+                    // App explicitly requests service, avoid adding any default config
+                    isServiceAware = true;
 
-                            // Load the config from the application's manifest
-                            appConfig = service.config;
-                        } else {
-                            console.log(`App ${identity.uuid}/${service.name} declares service, but doesn't contain config`);
-                        }
+                    if (service.config) {
+                        console.log(`Using config from ${identity.uuid}/${service.name}`);
+
+                        // Load the config from the application's manifest
+                        appConfig = service.config;
+                    } else {
+                        console.log(`App ${identity.uuid}/${service.name} declares service, but doesn't contain config`);
                     }
-                });
-            } else if (!isManifest && parentUuid && this._appState.hasOwnProperty(parentUuid)) {
-                // Don't use the default config if this is a programmatic child of a service-aware app
-                const parentState: AppState = this.getAppState(parentUuid)!;
-                isServiceAware = parentState.isServiceAware;
-            }
-
-            // Build app metadata hierarchy
-            if (parentUuid && (this._appState.hasOwnProperty(parentUuid) || !isManifest)) {
-                // Fetch parent state
-                let parentState: AppState|null = this.getAppState(parentUuid);
-                if (!parentState) {
-                    // Parent must have been a manifest-app that declared the service, but no custom config
-                    console.log(`Late-registering ${parentUuid} as service-aware (manifest-launched) app`);
-                    parentState = this.getOrCreateAppState(fin.Application.wrapSync({uuid: parentUuid}), true);
                 }
+            });
+        } else if (!isManifest && parentUuid && this._appState.hasOwnProperty(parentUuid)) {
+            // Don't use the default config if this is a programmatic child of a service-aware app
+            const parentState: AppState = this.getAppState(parentUuid)!;
+            isServiceAware = parentState.isServiceAware;
+        }
 
-                // App *may* be service-aware on it's own, but if it's state hasn't already been created by this point, then inherit awareness from parent app
-                const state = this.getOrCreateAppState(app, parentState.isServiceAware);
-
-                console.log(`Registering ${identity.uuid} as a child of ${parentState.scope.uuid}`);
-                state.parent = parentState;
-                parentState.children.push(state);
+        // Build app metadata hierarchy
+        if (parentUuid && (this._appState.hasOwnProperty(parentUuid) || !isManifest)) {
+            // Fetch parent state
+            let parentState: AppState|null = this.getAppState(parentUuid);
+            if (!parentState) {
+                // Parent must have been a manifest-app that declared the service, but no custom config
+                console.log(`Late-registering ${parentUuid} as service-aware (manifest-launched) app`);
+                parentState = this.getOrCreateAppState(fin.Application.wrapSync({uuid: parentUuid}), true);
             }
 
-            // Use default config for any apps that don't reference the service in any way
-            if (!isServiceAware && this._defaultConfig) {
-                const parentState: AppState|null = this.getAppState(parentUuid || '');
+            // App *may* be service-aware on it's own, but if it's state hasn't already been created by this point, then inherit awareness from parent app
+            const state = this.getOrCreateAppState(app, parentState.isServiceAware);
 
-                if (!parentState || !parentState.isServiceAware) {
-                    console.log(`Using default config for ${identity.uuid}`);
+            console.log(`Registering ${identity.uuid} as a child of ${parentState.scope.uuid}`);
+            state.parent = parentState;
+            parentState.children.push(state);
+        }
 
-                    // Application doesn't reference this service, use whatever fall-back configuration was specified for this scenario
-                    appConfig = this._defaultConfig;
-                } else {
-                    console.log(`Not applying default state to ${identity.uuid}, due to service-aware parent app`);
-                }
+        // Use default config for any apps that don't reference the service in any way
+        if (!isServiceAware && this._defaultConfig) {
+            const parentState: AppState|null = this.getAppState(parentUuid || '');
+
+            if (!parentState || !parentState.isServiceAware) {
+                console.log(`Using default config for ${identity.uuid}`);
+
+                // Application doesn't reference this service, use whatever fall-back configuration was specified for this scenario
+                appConfig = this._defaultConfig;
+            } else {
+                console.log(`Not applying default state to ${identity.uuid}, due to service-aware parent app`);
             }
+        }
 
-            // If there's config for this app (whether app-defined or default), add it to the store
-            if (appConfig) {
-                const state = this.getOrCreateAppState(app, isServiceAware);
-                this._store.add(state.scope, appConfig);
-            }
-        });
+        // If there's config for this app (whether app-defined or default), add it to the store
+        if (appConfig) {
+            const state = this.getOrCreateAppState(app, isServiceAware);
+            this._store.add(state.scope, appConfig);
+        }
     }
 
     private onApplicationClosed(event: ApplicationEvent<'application', 'closed'>): void {
@@ -241,7 +275,6 @@ export class Loader<T> {
 
             // Unload this application's config, unless it may be required by another application
             this.cleanUpApplicationConfig(state);
-
             let parent = state;
             while (parent.parent && !parent.parent.isRunning) {
                 parent = parent.parent;

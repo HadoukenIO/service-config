@@ -359,7 +359,7 @@ export class ConfigUtil {
                 (target[key] as {}) = {};
             }
 
-            //@ts-ignore Expression produces a union type that is too complex to represent.
+            // @ts-ignore Expression produces a union type that is too complex to represent.
             ConfigUtil.deepAssignMask<any, any>(target[key], value[key], typeof mask === 'object' ? mask[key] : mask);
         }
     }
