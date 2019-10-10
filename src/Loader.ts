@@ -155,8 +155,19 @@ export class Loader<T> {
         return (state && state.parent && state.parent.scope.uuid) || undefined;
     }
 
+    /**
+     * Add timeout for `getServiceConfiguration` to prevent it hanging.
+     */
+    private async getServiceConfigurationOrTimeout(): Promise<ServiceConfiguration> {
+        const timer = new Promise<ServiceConfiguration>((resolve, reject) => {
+            setTimeout(() => reject(new Error('Timeout trying to retrieve the service config.')), 5000);
+        });
+
+        return Promise.race([fin.System.getServiceConfiguration({name: this._serviceName}), timer]);
+    }
+
     private async loadDesktopOwnerConfiguration(): Promise<void> {
-        const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
+        const desktopOwnerConfig: T | null = await this.getServiceConfigurationOrTimeout()
             .then(config => (config as ServiceConfig<T>).config).catch(() => null);
 
         const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
