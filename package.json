@@ -23,7 +23,7 @@
     "openfin-service-signal": "^1.0.0",
     "openfin-service-tooling": "^1.0.14",
     "rimraf": "^2.6.3",
-    "typescript": "3.5.1"
+    "typescript": "^3.8.3"
   },
   "peerDependencies": {
     "openfin-service-signal": "^1.0.0",
