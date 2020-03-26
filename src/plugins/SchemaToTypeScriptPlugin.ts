@@ -3,7 +3,7 @@ import * as path from 'path';
 import {compileFromFile} from 'json-schema-to-typescript';
 import {BasePlugin, PluginOptions} from 'openfin-service-tooling/webpack/plugins/BasePlugin';
 
-type SchemaToTypeScriptOptions = {
+interface SchemaToTypeScriptOptions {
     schemaRoot: string;
 }
 /**

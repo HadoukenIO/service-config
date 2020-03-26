@@ -12,6 +12,7 @@ import {FakeApplication} from './utils/FakeApplication';
 import {FakeWindow} from './utils/FakeWindow';
 
 let store: Store<ConfigTemplate>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let loader: Loader<ConfigTemplate>;
 let counter: number = 0;
 
@@ -26,14 +27,14 @@ interface ConfigTemplate {
         featureOne?: boolean;
         featureTwo?: boolean;
         featureThree?: boolean;
-    },
+    };
     theme?: {
         color?: string;
         border?: number;
-    }
+    };
 }
 
-type Config = RequiredRecursive<ConfigTemplate>
+type Config = RequiredRecursive<ConfigTemplate>;
 
 const defaults: Config = {
     enabled: true,
@@ -52,8 +53,8 @@ function createUuid(): string {
     return `test-app-config-${++counter}`;
 }
 
-function getWindowConfig (store: Store<ConfigTemplate>, identity: Identity): Config {
-    return store.query({level: 'window', uuid: identity.uuid, name: identity.name || identity.uuid});
+function getWindowConfig(storeConfig: Store<ConfigTemplate>, identity: Identity): Config {
+    return storeConfig.query({level: 'window', uuid: identity.uuid, name: identity.name || identity.uuid});
 }
 
 function createAppWithConfig(uuid: string, config: Partial<ConfigWithRules<ConfigTemplate>>, parentUuid?: string): Promise<FakeApplication> {
@@ -78,7 +79,7 @@ it('Config is loaded from an application\'s manifest', async () => {
     // Config specifies that window shouldn't be registered
     const config: Config = getWindowConfig(store, app.identity);
 
-    await assert.strictEqual(config.enabled, false);
+    assert.strictEqual(config.enabled, false);
 });
 
 it('Config is loaded from desktop owner file', async () => {
@@ -126,7 +127,8 @@ it('If an application creates a child application, the config of the parent appl
 
 it('If an application creates a child application, the parent can apply rules to the child that still apply after the parent exits', async () => {
     const childAppUuid: string = createUuid();
-    const app: FakeApplication = await createAppWithConfig(createUuid(), {enabled: false,
+    const app: FakeApplication = await createAppWithConfig(createUuid(), {
+        enabled: false,
         rules: [{scope: {level: 'application', uuid: childAppUuid}, config: {features: {featureOne: false}}}]
     });
     const childApp: FakeApplication = await createAppWithConfig(childAppUuid, {}, app.identity.uuid);

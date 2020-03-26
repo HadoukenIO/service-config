@@ -16,7 +16,7 @@ const fake = {
 export function addConsoleSpies(): ConsoleSpy {
     const spies: ConsoleSpy = {log: jest.spyOn(fake, 'log'), warn: jest.spyOn(fake, 'warn'), error: jest.spyOn(fake, 'error')};
 
-    (Object.keys(spies) as (keyof ConsoleSpy)[]).forEach(key => {
+    (Object.keys(spies) as (keyof ConsoleSpy)[]).forEach((key) => {
         // tslint:disable-next-line:no-any
         (fake[key] as any) = spies[key];
     });
