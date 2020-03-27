@@ -42,7 +42,7 @@ export interface ScopedConfig<T> {
  * }]
  * ```
  */
-export type ConfigWithRules<T> = T&{
+export type ConfigWithRules<T> = T & {
     rules?: ScopedConfig<T>[];
 };
 
@@ -85,11 +85,11 @@ export interface StoredConfig<T> {
  * subset of the config struct.
  */
 export class Store<T> {
-    private _items: Map<Scopes, StoredConfig<T>[]>;
-    private _cache: Map<string, RequiredRecursive<T>>;
-    private _watches: Watch<T>[];
+    private readonly _items: Map<Scopes, StoredConfig<T>[]>;
+    private readonly _cache: Map<string, RequiredRecursive<T>>;
+    private readonly _watches: Watch<T>[];
 
-    constructor(defaults: RequiredRecursive<T>&ConfigWithRules<T>) {
+    constructor(defaults: RequiredRecursive<T> & ConfigWithRules<T>) {
         this._items = new Map();
         this._cache = new Map();
         this._watches = [];
@@ -110,7 +110,7 @@ export class Store<T> {
             });
 
             // Remove rules array from default config
-            config = Object.assign({}, config);
+            config = {...config};
             delete config.rules;
         }
 
@@ -149,7 +149,7 @@ export class Store<T> {
     /**
      * Removes any configuration that originated from the given source.
      *
-     * @param scope Identity of whatever source is now no longer available
+     * @param source Identity of whatever source is now no longer available
      */
     public removeFromSource(source: Scope): void {
         this._items.forEach((values: StoredConfig<T>[]) => {
@@ -241,7 +241,7 @@ export class Store<T> {
         } else {
             for (let i = 0, scopeIndex = ScopePrecedence[scope.level]; i <= scopeIndex; i++) {
                 const rulesAtScope: StoredConfig<T>[] = this._items.get(ScopePrecedence[i] as Scopes) || [];
-                const applicableRules: StoredConfig<T>[] = rulesAtScope.filter(rule => ConfigUtil.matchesRule(rule.scope, scope));
+                const applicableRules: StoredConfig<T>[] = rulesAtScope.filter((rule) => ConfigUtil.matchesRule(rule.scope, scope));
 
                 if (applicableRules.length === 1) {
                     ConfigUtil.deepAssign<T>(result as T, applicableRules[0].config);
@@ -277,7 +277,7 @@ export class Store<T> {
         const priority: ScopePrecedence = ScopePrecedence[scope.level];
         for (let i = 0; i <= priority; i++) {
             const rulesAtScope: StoredConfig<T>[] = this._items.get(ScopePrecedence[i] as Scopes) || [];
-            const applicableRules: StoredConfig<T>[] = rulesAtScope.filter(rule => ConfigUtil.matchesRule(rule.scope, scope));
+            const applicableRules: StoredConfig<T>[] = rulesAtScope.filter((rule) => ConfigUtil.matchesRule(rule.scope, scope));
 
             if (applicableRules) {
                 applicableRules.forEach((config: StoredConfig<T>) => {
@@ -294,15 +294,15 @@ export class Store<T> {
     private addInternal(source: Scope, rule: Rule, config: T): void {
         this._cache.clear();
 
-        let itemsWithScope: StoredConfig<T>[]|undefined = this._items.get(rule.level);
+        let itemsWithScope: StoredConfig<T>[] | undefined = this._items.get(rule.level);
         if (!itemsWithScope) {
             itemsWithScope = [];
             this._items.set(rule.level, itemsWithScope);
         }
 
         const scopedConfig: StoredConfig<T> = {source, scope: rule, config};
-        const existingConfig: StoredConfig<T>|undefined = itemsWithScope.find((config: StoredConfig<T>) => {
-            return ConfigUtil.scopesEqual(source, config.source) && ConfigUtil.rulesEqual(rule, config.scope);
+        const existingConfig: StoredConfig<T> | undefined = itemsWithScope.find((_config: StoredConfig<T>) => {
+            return ConfigUtil.scopesEqual(source, _config.source) && ConfigUtil.rulesEqual(rule, _config.scope);
         });
 
         if (existingConfig) {
@@ -378,7 +378,7 @@ export class Store<T> {
      * @param config A config rule that has just been added or removed
      * @param signal The action performed to `config` - defines which signal on the watch will be emitted
      */
-    private checkWatches(config: StoredConfig<T>, signal: 'onAdd'|'onRemove'): void {
+    private checkWatches(config: StoredConfig<T>, signal: 'onAdd' | 'onRemove'): void {
         const {source, ...rule} = config;
 
         this._watches.forEach((watch: Watch<T>) => {

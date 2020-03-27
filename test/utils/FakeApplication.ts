@@ -17,7 +17,7 @@ interface AppState {
 export class FakeApplication extends EventEmitter {
     private readonly _identity: Identity;
     private readonly _manifest: any;
-    private _windows: Map<string, FakeWindow> = new Map<string, FakeWindow>();
+    private readonly _windows: Map<string, FakeWindow> = new Map<string, FakeWindow>();
     private _parentUuid: string|undefined;
     private _state: AppState = {isRunning: true};
 

@@ -1,10 +1,8 @@
-import {Application, Identity} from 'hadouken-js-adapter';
+import {Fin, Application, Identity} from 'hadouken-js-adapter';
 import {ApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/application/application';
 import {ApplicationEvent, WindowEvent} from 'hadouken-js-adapter/out/types/src/api/events/base';
 import {ApplicationInfo as SystemApplicationInfo} from 'hadouken-js-adapter/out/types/src/api/system/application';
 import {ServiceConfiguration} from 'hadouken-js-adapter/out/types/src/api/system/external-process';
-import {Fin} from 'hadouken-js-adapter';
-import {_Window} from 'hadouken-js-adapter/out/types/src/api/window/window';
 
 import {ApplicationScope, Scope} from './Types';
 import {ConfigUtil} from './ConfigUtil';
@@ -12,7 +10,7 @@ import {ConfigWithRules, ScopedConfig, Store} from './Store';
 import {SourceWatch} from './Watch';
 import {DeferredPromise} from './DeferredPromise';
 
-declare const fin:Fin;
+declare const fin: Fin;
 
 /**
  * Contents of an app.json file.
@@ -33,7 +31,7 @@ interface ServiceDeclaration<T> {
 interface AppState {
     scope: ApplicationScope;
     isRunning: boolean;
-    parent: AppState|null;
+    parent: AppState | null;
     children: AppState[];
     isServiceAware: boolean;
 }
@@ -45,12 +43,12 @@ type ServiceConfig<T> = ServiceConfiguration & {config: T};
  * application-defined config to/from the store.
  */
 export class Loader<T> {
-    private _store: Store<T>;
-    private _serviceName: string;
-    private _defaultConfig: T|null;
+    private readonly _store: Store<T>;
+    private readonly _serviceName: string;
+    private readonly _defaultConfig: T | null;
 
     private _appState: {[uuid: string]: AppState};
-    private _watch: SourceWatch<T>;
+    private readonly _watch: SourceWatch<T>;
 
     /**
      * Maps an application UUID to the UUID of it's "parent" application.
@@ -64,12 +62,12 @@ export class Loader<T> {
     /**
      * List of stringified window scopes that have added rules to the store.
      */
-    private _windowsWithConfig: string[];
+    private readonly _windowsWithConfig: string[];
 
     /**
      * Initialization indication flag to check that we have completely finished any async constructor operations.
      */
-    private _initialized: DeferredPromise<void>;
+    private readonly _initialized: DeferredPromise<void>;
 
     /**
      * Creates a config loader.
@@ -83,7 +81,7 @@ export class Loader<T> {
      * programmatically-launched application, that was launched by a "service-aware" application.
      *
      * @param store Store to which application-defined config will be placed
-     * @param serviceNames The name of the service, plus aliases if appropriate
+     * @param serviceName The name of the service, plus aliases if appropriate
      * @param defaultConfig Optionally, config to add to the store for any application that isn't service-aware
      */
     constructor(store: Store<T>, serviceName: string, defaultConfig?: T) {
@@ -109,7 +107,7 @@ export class Loader<T> {
 
             const allApplications: SystemApplicationInfo[] = await fin.System.getAllApplications();
 
-            await Promise.all(allApplications.map(async app => {
+            await Promise.all(allApplications.map(async (app) => {
                 if (app.isRunning) {
                     // Register the main window
                     await this.onApplicationCreated(app);
@@ -150,17 +148,17 @@ export class Loader<T> {
      *
      * @param appUuid Application to query for cached parent UUID
      */
-    public getAppParent(appUuid: string): string|undefined {
+    public getAppParent(appUuid: string): string | undefined {
         const state = this.getAppState(appUuid);
         return (state && state.parent && state.parent.scope.uuid) || undefined;
     }
 
     private async loadDesktopOwnerConfiguration(): Promise<void> {
         const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
-            .then(config => (config as ServiceConfig<T>).config).catch(() => null);
+            .then((config) => (config as ServiceConfig<T>).config).catch(() => null);
 
         const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
-            .then(manifest => manifest.serviceConfiguration || null).catch(() => null);
+            .then((manifest) => manifest.serviceConfiguration || null).catch(() => null);
 
         // Prefer service manifest over desktop owner file configs.
         // Service configs are placed under a non-documented key so this should not be used in production.
@@ -186,12 +184,12 @@ export class Loader<T> {
 
         const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
         const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
-        let parentUuid: string|undefined = info.parentUuid;
-        let appConfig: ConfigWithRules<T>|null = null;
+        let parentUuid: string | undefined = info.parentUuid;
+        let appConfig: ConfigWithRules<T> | null = null;
         let isServiceAware = false;
 
         // Override parent UUID if it's an app we have been expecting to start-up
-        const overrideParentUuid: string|undefined = this._appParentMap[identity.uuid];
+        const overrideParentUuid: string | undefined = this._appParentMap[identity.uuid];
         if (overrideParentUuid) {
             console.log(`Tracking ${identity.uuid} as having parent ${overrideParentUuid} over ${parentUuid}`);
 
@@ -225,7 +223,7 @@ export class Loader<T> {
         // Build app metadata hierarchy
         if (parentUuid && (this._appState.hasOwnProperty(parentUuid) || !isManifest)) {
             // Fetch parent state
-            let parentState: AppState|null = this.getAppState(parentUuid);
+            let parentState: AppState | null = this.getAppState(parentUuid);
             if (!parentState) {
                 // Parent must have been a manifest-app that declared the service, but no custom config
                 console.log(`Late-registering ${parentUuid} as service-aware (manifest-launched) app`);
@@ -242,7 +240,7 @@ export class Loader<T> {
 
         // Use default config for any apps that don't reference the service in any way
         if (!isServiceAware && this._defaultConfig) {
-            const parentState: AppState|null = this.getAppState(parentUuid || '');
+            const parentState: AppState | null = this.getAppState(parentUuid || '');
 
             if (!parentState || !parentState.isServiceAware) {
                 console.log(`Using default config for ${identity.uuid}`);
@@ -333,7 +331,7 @@ export class Loader<T> {
         }
     }
 
-    private getAppState(app: string|Identity): AppState|null {
+    private getAppState(app: string | Identity): AppState | null {
         const uuid: string = (app as Identity).uuid || (app as string);
         return this._appState[uuid] || null;
     }
