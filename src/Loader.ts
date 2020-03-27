@@ -19,9 +19,11 @@ declare const fin: Fin;
  */
 interface AppManifest<T> {
     uuid: string;
-    startup_app: {uuid: string};
+    platform?: {uuid: string};
+    startup_app?: {uuid: string};
     services?: ServiceDeclaration<T>[];
 }
+
 interface ServiceDeclaration<T> {
     name: string;
     config?: ConfigWithRules<T>;
@@ -183,7 +185,7 @@ export class Loader<T> {
         const info: ApplicationInfo = await app.getInfo();
 
         const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
-        const isManifest: boolean = !!manifest && manifest.startup_app.uuid === identity.uuid;
+        const isManifest: boolean = !!manifest && (manifest.startup_app ?? manifest.platform)?.uuid === identity.uuid;
         let parentUuid: string | undefined = info.parentUuid;
         let appConfig: ConfigWithRules<T> | null = null;
         let isServiceAware = false;
