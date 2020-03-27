@@ -34,7 +34,7 @@ export enum ScopePrecedence {
  * this util to work as intended with the `ConfigWithRules<T>` type.
  */
 export type RequiredRecursive<T> = {
-    [P in keyof T] -?: T[P] extends number|string|boolean|'rules' ? T[P] : RequiredRecursive<T[P]>;
+    [P in keyof T]-?: T[P] extends number | string | boolean | 'rules' ? T[P] : RequiredRecursive<T[P]>;
 };
 
 /**
@@ -50,7 +50,7 @@ export type RequiredRecursive<T> = {
  * config tree that aren't required by the callee.
  */
 export type Mask<T> = {
-    [P in keyof T]: T[P] extends number|string|boolean ? boolean : boolean|Mask<T[P]>;
+    [P in keyof T]: T[P] extends number | string | boolean ? boolean : boolean | Mask<T[P]>;
 };
 
 /**
@@ -62,9 +62,9 @@ export type Mask<T> = {
  * `any` types, but these utils *are* type-safe, so long as the value used for the mask strictly matches type `M` (with
  * no missing or additional fields).
  */
-export type Masked<T, M extends Mask<T>> = MaskedHelper<T, M, keyof T&keyof M>;
-type MaskedHelper<T, M, K extends(keyof T)&(keyof M)> = {
-    [P in K]: M[P] extends true ? (T[P] extends number|string|boolean ? T[P] : (M[P] extends Mask<T[P]>? Masked<T[P], M[P]>: never)) : never;
+export type Masked<T, M extends Mask<T>> = MaskedHelper<T, M, keyof T & keyof M>;
+type MaskedHelper<T, M, K extends (keyof T) & (keyof M)> = {
+    [P in K]: M[P] extends true ? (T[P] extends number | string | boolean ? T[P] : (M[P] extends Mask<T[P]> ? Masked<T[P], M[P]> : never)) : never;
 };
 
 /**
@@ -77,7 +77,7 @@ export class ConfigUtil {
      *
      * @param scope The scope/rule to stringify
      */
-    public static getId(scope: Rule|Scope): string {
+    public static getId(scope: Rule | Scope): string {
         switch (scope.level) {
             case 'application':
                 return `${scope.level}:${ConfigUtil.stringifyParam(scope.uuid)}`;
@@ -123,13 +123,13 @@ export class ConfigUtil {
      * @param b Second rule
      */
     public static rulesEqual(a: Rule, b: Rule): boolean {
-        function paramEqual(a: string|RegEx, b: string|RegEx): boolean {
-            if (typeof a !== typeof b) {
+        function paramEqual(x: string | RegEx, y: string | RegEx): boolean {
+            if (typeof x !== typeof y) {
                 return false;
-            } else if (typeof a === 'string') {
-                return a === b;
-            } else if (typeof b !== 'string') {  // Redundant since expression will always be true, but allows TypeScript to infer type of 'b'
-                return a.expression === b.expression && (a.flags || '') === (b.flags || '') && (a.invert || false) === (b.invert || false);
+            } else if (typeof x === 'string') {
+                return x === y;
+            } else if (typeof y !== 'string') {  // Redundant since expression will always be true, but allows TypeScript to infer type of 'b'
+                return x.expression === y.expression && (x.flags || '') === (y.flags || '') && (x.invert || false) === (y.invert || false);
             }
             return false;
         }
@@ -240,7 +240,7 @@ export class ConfigUtil {
      * @param filter A string or RegEx pattern to use to test 'value'
      * @param value The string to test against the given filter
      */
-    public static checkPattern(filter: string|RegEx, value: string): boolean {
+    public static checkPattern(filter: string | RegEx, value: string): boolean {
         if (!filter) {
             return true;
         } else if (typeof filter === 'string') {
@@ -257,7 +257,7 @@ export class ConfigUtil {
             return value;
         } else {
             // Start with a shallow copy of 'value'
-            const out = Object.assign({}, value);
+            const out = {...value};
 
             // Recursively deep-copy each non-primitive child member
             for (const key in out) {
@@ -282,7 +282,7 @@ export class ConfigUtil {
         }
     }
 
-    public static deepAssignMask<T extends {}, M extends Mask<T>>(target: Masked<T, M>, value: T, mask: M|boolean): void {
+    public static deepAssignMask<T extends {}, M extends Mask<T>>(target: Masked<T, M>, value: T, mask: M | boolean): void {
         const keys = Object.keys(mask instanceof Object ? mask : value) as (keyof T)[];
 
         if (mask === false) {
@@ -308,7 +308,7 @@ export class ConfigUtil {
     /**
      * Returns true if ANY of the fields specified in 'mask' exist within 'value'.
      */
-    public static matchesMask<T extends {}, M extends Mask<T>>(value: T, mask: M|boolean): boolean {
+    public static matchesMask<T extends {}, M extends Mask<T>>(value: T, mask: M | boolean): boolean {
         if (mask instanceof Object) {
             const maskObj: M = mask as M;
             const keys = Object.keys(mask) as (keyof T)[];
@@ -339,7 +339,7 @@ export class ConfigUtil {
         }
     }
 
-    private static stringifyParam(param: string|RegEx): string {
+    private static stringifyParam(param: string | RegEx): string {
         if (typeof param === 'string') {
             return param;
         } else {
@@ -347,7 +347,7 @@ export class ConfigUtil {
         }
     }
 
-    private static assignProp<T extends {}, M extends Mask<T>>(target: Masked<T, M>, value: T, key: keyof T, mask: M|boolean): void {
+    private static assignProp<T extends {}, M extends Mask<T>>(target: Masked<T, M>, value: T, key: keyof T, mask: M | boolean): void {
         // The types get a bit complicated here, so a few "any"'s are required to prevent compile errors...
         // TypeScript can't figure out the type of T[key], since 'key' is a runtime argument.
 
@@ -364,7 +364,7 @@ export class ConfigUtil {
         }
     }
 
-    private static inMask<T>(mask: boolean|Mask<T>, key: keyof T): mask is Mask<T> {
+    private static inMask<T>(mask: boolean | Mask<T>, key: keyof T): mask is Mask<T> {
         if (typeof mask === 'boolean') {
             return mask;
         } else {

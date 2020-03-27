@@ -7,7 +7,7 @@ import {FakeApplication} from './FakeApplication';
 import {FakeWindow} from './FakeWindow';
 
 const emitter = new EventEmitter();
-const apps = new Map<String, FakeApplication>();
+const apps = new Map<string, FakeApplication>();
 
 interface SystemAppInfo extends AppState, Identity {
     parentUuid: string;
@@ -27,7 +27,7 @@ class FinSystem {
     }
 
     public async getAllApplications(): Promise<SystemAppInfo[]> {
-        return Array.from(apps.values()).map(app => {
+        return Array.from(apps.values()).map((app) => {
             return {
                 isRunning: app.state.isRunning,
                 uuid: app.identity.uuid,
@@ -66,6 +66,7 @@ class FinApplication {
 
         if (!manifest.startup_app || (manifest.startup_app && (!manifest.startup_app.uuid || !manifest.startup_app.name))) {
             manifest = deepmerge(manifest, {
+                // eslint-disable-next-line @typescript-eslint/camelcase
                 startup_app: sanitizedIdentity
             });
         }
@@ -120,9 +121,9 @@ class FinWindow {
 }
 
 export const fin = {
-    System: new FinSystem,
-    Application: new FinApplication,
-    Window: new FinWindow
+    System: new FinSystem(),
+    Application: new FinApplication(),
+    Window: new FinWindow()
 };
 
 global['fin'] = fin;

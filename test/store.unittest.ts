@@ -33,8 +33,8 @@ interface ConfigTemplate {
     theme?: {
         scheme?: string;
         opacity?: number;
-        backColour?: number|string;
-        borderColour?: number|string;
+        backColour?: number | string;
+        borderColour?: number | string;
         borderThickness?: number;
     };
 }
@@ -48,7 +48,7 @@ const scopes = {
     // "Generic" scopes with no contextual parameters
     service: {level: 'service'} as Scope,
     desktop: {level: 'desktop'} as Scope,
-
+    /* eslint-disable @typescript-eslint/camelcase */
     // Three dummy applications
     app_1: {level: 'application', uuid: 'app-1'} as Scope,
     app_2: {level: 'application', uuid: 'app-2'} as Scope,
@@ -61,6 +61,7 @@ const scopes = {
     win_2_2: {level: 'window', uuid: 'app-2', name: 'win-2'} as Scope,
     win_3_1: {level: 'window', uuid: 'app-3', name: 'win-1'} as Scope,
     win_3_2: {level: 'window', uuid: 'app-3', name: 'win-2'} as Scope
+    /* eslint-enable @typescript-eslint/camelcase */
 };
 
 /**

@@ -1,5 +1,5 @@
 export async function delay(milliseconds: number): Promise<void> {
-    return new Promise<void>(r => setTimeout(r, milliseconds));
+    return new Promise<void>((r) => setTimeout(r, milliseconds));
 }
 
 export enum Duration {

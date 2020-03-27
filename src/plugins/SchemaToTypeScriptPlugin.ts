@@ -3,7 +3,7 @@ import * as path from 'path';
 import {compileFromFile} from 'json-schema-to-typescript';
 import {BasePlugin, PluginOptions} from 'openfin-service-tooling/webpack/plugins/BasePlugin';
 
-type SchemaToTypeScriptOptions = {
+interface SchemaToTypeScriptOptions {
     schemaRoot: string;
 }
 /**
@@ -23,7 +23,7 @@ export class SchemaToTypeScriptPlugin extends BasePlugin<PluginOptions<SchemaToT
      * Runs the plugin.
      * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
      */
-    async run(action?: string) {
+    public async run(action?: string): Promise<void> {
         if (!action || action.toUpperCase() === 'GENERATE') {
             await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
                 console.log(`Generating TypeScript definitions for ${path.basename(schemaFilename)}`);

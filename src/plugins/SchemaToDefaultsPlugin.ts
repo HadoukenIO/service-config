@@ -23,7 +23,7 @@ export class SchemaToDefaultsPlugin extends BasePlugin<{}> {
      * Runs the plugin.
      * @param action Specifies which action should occur. If no action is provided then the default action (generate) will be processed.
      */
-    async run(action?: string) {
+    public async run(action?: string): Promise<void> {
         if (!action || action.toUpperCase() === 'GENERATE') {
             await Promise.all((this.options.input as string[]).map(async (schemaFilename: string) => {
                 console.log(`Generating defaults for ${path.basename(schemaFilename)}`);
@@ -35,8 +35,9 @@ export class SchemaToDefaultsPlugin extends BasePlugin<{}> {
         }
     }
 
-    getDefaults(schemaFilename: string) {
-        let schema, result;
+    private getDefaults(schemaFilename: string): Promise<object> {
+        let schema;
+        let result;
 
         // Load & parse JSON schema
         try {
