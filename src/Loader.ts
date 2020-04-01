@@ -24,6 +24,12 @@ interface AppManifest<T> {
     services?: ServiceDeclaration<T>[];
 }
 
+interface ProviderManifest<T> {
+    uuid: string;
+    startup_app: {uuid: string};
+    serviceConfiguration: T;
+}
+
 interface ServiceDeclaration<T> {
     name: string;
     config?: ConfigWithRules<T>;
@@ -156,11 +162,9 @@ export class Loader<T> {
     }
 
     private async loadDesktopOwnerConfiguration(): Promise<void> {
+        const serviceConfig: T | null = await this.getServiceConfiguration();
         const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
             .then((config) => (config as ServiceConfig<T>).config).catch(() => null);
-
-        const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
-            .then((manifest) => manifest.serviceConfiguration || null).catch(() => null);
 
         // Prefer service manifest over desktop owner file configs.
         // Service configs are placed under a non-documented key so this should not be used in production.
@@ -259,6 +263,49 @@ export class Loader<T> {
             const state = this.getOrCreateAppState(app, isServiceAware);
             this._store.add(state.scope, appConfig);
         }
+    }
+
+    /**
+     * Fetches any configuration data that is defined within the providers manifest. Placing configuration in the
+     * provider manfiest is supported as an alternative to using Desktop Owner Settings.
+     *
+     * When the service is embedded within the provider, the application that first requests the service can reference
+     * a provider manifest URL, which will act as the provider's manifest for configuration purposes.
+     *
+     * Both of these mechanisms are intended only for development purposes. Production environments should only use
+     * Desktop Owner Settings.
+     */
+    private async getServiceConfiguration(): Promise<T | null> {
+        const info: ApplicationInfo = await fin.Application.getCurrentSync().getInfo();
+        let serviceManifest: ProviderManifest<T> | undefined;
+        if (info.manifest) {
+            serviceManifest = info.manifest as ProviderManifest<T>;
+        } else {
+            const manifestUrl = (info.initialOptions as {[key: string]: string})[`${this._serviceName}Manifest`];
+            if (manifestUrl) {
+                // Fetch the given manifest
+                serviceManifest = await fetch(manifestUrl).then((response) => {
+                    if (response.status >= 400) {
+                        return null;
+                    } else {
+                        return response.json();
+                    }
+                }).catch(() => null);
+
+                // Ensure the given manifest is for this service
+                if (serviceManifest) {
+                    const manifestUuid = serviceManifest.uuid || serviceManifest?.startup_app.uuid;
+                    const providerUuid = fin.Application.me.uuid;
+                    const runtime = await fin.System.getVersion();
+                    if (providerUuid !== `${manifestUuid}-${runtime}`) {
+                        console.warn(`Ignoring ${this._serviceName}Manifest attribute, manifest mis-match`);
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return (serviceManifest && serviceManifest.serviceConfiguration) || null;
     }
 
     private onApplicationClosed(event: ApplicationEvent<'application', 'closed'>): void {
