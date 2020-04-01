@@ -189,7 +189,8 @@ export class Loader<T> {
         const info: ApplicationInfo = await app.getInfo();
 
         const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
-        const isManifest: boolean = !!manifest && (manifest.startup_app ?? manifest.platform)?.uuid === identity.uuid;
+        const {startup_app: startupApp, platform, services} = manifest || {};
+        const isManifest: boolean = !!manifest && (startupApp ?? platform)?.uuid === identity.uuid;
         let parentUuid: string | undefined = info.parentUuid;
         let appConfig: ConfigWithRules<T> | null = null;
         let isServiceAware = false;
@@ -203,24 +204,29 @@ export class Loader<T> {
             delete this._appParentMap[identity.uuid];
         }
 
-        if (isManifest && manifest.services && manifest.services.length) {
-            // Check for service declaration within app manifest
-            manifest.services.forEach((service: ServiceDeclaration<T>) => {
-                if (this._serviceName === service.name) {
-                    // App explicitly requests service, avoid adding any default config
-                    isServiceAware = true;
+        if (isManifest) {
+            // Check for any references to the service within the app's manifest
+            const usingInjection = startupApp?.hasOwnProperty(`${this._serviceName}Api`);
+            const serviceDeclaration = services?.find((service: ServiceDeclaration<T>) => service.name === this._serviceName);
 
-                    if (service.config) {
-                        console.log(`Using config from ${identity.uuid}/${service.name}`);
+            // App explicitly requests service, avoid adding any default config
+            isServiceAware = usingInjection || !!serviceDeclaration;
 
-                        // Load the config from the application's manifest
-                        appConfig = service.config;
-                    } else {
-                        console.log(`App ${identity.uuid}/${service.name} declares service, but doesn't contain config`);
-                    }
-                }
-            });
-        } else if (!isManifest && parentUuid && this._appState.hasOwnProperty(parentUuid)) {
+            // Look for config within the app's manifest
+            if (serviceDeclaration) {
+                // Load the config from the service declaration
+                appConfig = serviceDeclaration.config || null;
+            } else if (usingInjection) {
+                // Load the config from the app's startup args
+                appConfig = (startupApp! as any)[`${this._serviceName}Config`] || null;
+            }
+
+            if (appConfig) {
+                console.log(`Using config from ${identity.uuid}/${identity.name}`);
+            } else if (isServiceAware) {
+                console.log(`App ${identity.uuid}/${identity.name} declares service, but doesn't contain config`);
+            }
+        } else if (parentUuid && this._appState.hasOwnProperty(parentUuid)) {
             // Don't use the default config if this is a programmatic child of a service-aware app
             const parentState: AppState = this.getAppState(parentUuid)!;
             isServiceAware = parentState.isServiceAware;
