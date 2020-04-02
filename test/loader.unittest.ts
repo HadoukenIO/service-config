@@ -69,6 +69,7 @@ function createAppWithConfig(uuid: string, config: Partial<ConfigWithRules<Confi
     if (serviceType === 'desktop-service') {
         manifest = {services: [{name: 'testService', config}]};
     } else {
+        // eslint-disable-next-line @typescript-eslint/camelcase
         manifest = {startup_app: {testServiceApi: true, testServiceConfig: config}};
     }
 
@@ -164,7 +165,7 @@ it.each<[ServiceType, ServiceType]>([
     ['desktop-service', 'desktop-service'],
     ['desktop-service', 'runtime-injected'],
     ['runtime-injected', 'runtime-injected'],
-    ['runtime-injected', 'desktop-service'],
+    ['runtime-injected', 'desktop-service']
 ])('For independent applications of type "%s" and "%s", there is no shared lifecycle', async (type1, type2) => {
     const app1: FakeApplication = await createAppWithConfig(createUuid(), {enabled: false}, type1);
     const app2: FakeApplication = await createAppWithConfig(createUuid(), {enabled: false}, type2);

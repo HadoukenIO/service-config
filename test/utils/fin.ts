@@ -13,7 +13,7 @@ export function resetFin(): void {
     emitter.removeAllListeners();
 
     const appList = Array.from(apps.values());
-    appList.forEach(app => {
+    appList.forEach((app) => {
         app.removeAllListeners();
 
         if (app.identity.uuid !== 'primaryApp') {
