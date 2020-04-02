@@ -9,6 +9,19 @@ import {FakeWindow} from './FakeWindow';
 const emitter = new EventEmitter();
 const apps = new Map<string, FakeApplication>();
 
+export function resetFin(): void {
+    emitter.removeAllListeners();
+
+    const appList = Array.from(apps.values());
+    appList.forEach(app => {
+        app.removeAllListeners();
+
+        if (app.identity.uuid !== 'primaryApp') {
+            apps.delete(app.identity.uuid);
+        }
+    });
+}
+
 interface SystemAppInfo extends AppState, Identity {
     parentUuid: string;
 }
