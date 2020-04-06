@@ -1,8 +1,9 @@
 {
   "name": "openfin-service-config",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "Store.js",
+  "types": "Store.d.ts",
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json && node src/fileCopy.js",
     "check": "svc-tools check",
@@ -24,10 +25,6 @@
     "openfin-service-tooling": "^1.0.31",
     "rimraf": "^2.6.3",
     "typescript": "^3.8.3"
-  },
-  "peerDependencies": {
-    "openfin-service-signal": "^1.0.0",
-    "openfin-service-tooling": "^1.0.12"
   },
   "dependencies": {
     "json-schema-defaults": "^0.4.0",

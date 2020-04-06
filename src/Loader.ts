@@ -24,6 +24,12 @@ interface AppManifest<T> {
     services?: ServiceDeclaration<T>[];
 }
 
+interface ProviderManifest<T> {
+    uuid: string;
+    startup_app: {uuid: string};
+    serviceConfiguration: T;
+}
+
 interface ServiceDeclaration<T> {
     name: string;
     config?: ConfigWithRules<T>;
@@ -156,11 +162,9 @@ export class Loader<T> {
     }
 
     private async loadDesktopOwnerConfiguration(): Promise<void> {
+        const serviceConfig: T | null = await this.getServiceConfiguration();
         const desktopOwnerConfig: T | null = await fin.System.getServiceConfiguration({name: this._serviceName})
             .then((config) => (config as ServiceConfig<T>).config).catch(() => null);
-
-        const serviceConfig: T | null = await fin.Application.getCurrentSync().getManifest()
-            .then((manifest) => manifest.serviceConfiguration || null).catch(() => null);
 
         // Prefer service manifest over desktop owner file configs.
         // Service configs are placed under a non-documented key so this should not be used in production.
@@ -185,7 +189,8 @@ export class Loader<T> {
         const info: ApplicationInfo = await app.getInfo();
 
         const manifest: AppManifest<T> = info.manifest as AppManifest<T>;
-        const isManifest: boolean = !!manifest && (manifest.startup_app ?? manifest.platform)?.uuid === identity.uuid;
+        const {startup_app: startupApp, platform, services} = manifest || {};
+        const isManifest: boolean = !!manifest && (startupApp ?? platform)?.uuid === identity.uuid;
         let parentUuid: string | undefined = info.parentUuid;
         let appConfig: ConfigWithRules<T> | null = null;
         let isServiceAware = false;
@@ -199,24 +204,29 @@ export class Loader<T> {
             delete this._appParentMap[identity.uuid];
         }
 
-        if (isManifest && manifest.services && manifest.services.length) {
-            // Check for service declaration within app manifest
-            manifest.services.forEach((service: ServiceDeclaration<T>) => {
-                if (this._serviceName === service.name) {
-                    // App explicitly requests service, avoid adding any default config
-                    isServiceAware = true;
+        if (isManifest) {
+            // Check for any references to the service within the app's manifest
+            const usingInjection = startupApp?.hasOwnProperty(`${this._serviceName}Api`);
+            const serviceDeclaration = services?.find((service: ServiceDeclaration<T>) => service.name === this._serviceName);
 
-                    if (service.config) {
-                        console.log(`Using config from ${identity.uuid}/${service.name}`);
+            // App explicitly requests service, avoid adding any default config
+            isServiceAware = usingInjection || !!serviceDeclaration;
 
-                        // Load the config from the application's manifest
-                        appConfig = service.config;
-                    } else {
-                        console.log(`App ${identity.uuid}/${service.name} declares service, but doesn't contain config`);
-                    }
-                }
-            });
-        } else if (!isManifest && parentUuid && this._appState.hasOwnProperty(parentUuid)) {
+            // Look for config within the app's manifest
+            if (serviceDeclaration) {
+                // Load the config from the service declaration
+                appConfig = serviceDeclaration.config || null;
+            } else if (usingInjection) {
+                // Load the config from the app's startup args
+                appConfig = (startupApp! as any)[`${this._serviceName}Config`] || null;
+            }
+
+            if (appConfig) {
+                console.log(`Using config from ${identity.uuid}/${identity.name}`);
+            } else if (isServiceAware) {
+                console.log(`App ${identity.uuid}/${identity.name} declares service, but doesn't contain config`);
+            }
+        } else if (parentUuid && this._appState.hasOwnProperty(parentUuid)) {
             // Don't use the default config if this is a programmatic child of a service-aware app
             const parentState: AppState = this.getAppState(parentUuid)!;
             isServiceAware = parentState.isServiceAware;
@@ -259,6 +269,49 @@ export class Loader<T> {
             const state = this.getOrCreateAppState(app, isServiceAware);
             this._store.add(state.scope, appConfig);
         }
+    }
+
+    /**
+     * Fetches any configuration data that is defined within the providers manifest. Placing configuration in the
+     * provider manfiest is supported as an alternative to using Desktop Owner Settings.
+     *
+     * When the service is embedded within the provider, the application that first requests the service can reference
+     * a provider manifest URL, which will act as the provider's manifest for configuration purposes.
+     *
+     * Both of these mechanisms are intended only for development purposes. Production environments should only use
+     * Desktop Owner Settings.
+     */
+    private async getServiceConfiguration(): Promise<T | null> {
+        const info: ApplicationInfo = await fin.Application.getCurrentSync().getInfo();
+        let serviceManifest: ProviderManifest<T> | undefined;
+        if (info.manifest) {
+            serviceManifest = info.manifest as ProviderManifest<T>;
+        } else {
+            const manifestUrl = (info.initialOptions as {[key: string]: string})[`${this._serviceName}Manifest`];
+            if (manifestUrl) {
+                // Fetch the given manifest
+                serviceManifest = await fetch(manifestUrl).then((response) => {
+                    if (response.status >= 400) {
+                        return null;
+                    } else {
+                        return response.json();
+                    }
+                }).catch(() => null);
+
+                // Ensure the given manifest is for this service
+                if (serviceManifest) {
+                    const manifestUuid = serviceManifest.uuid || serviceManifest?.startup_app.uuid;
+                    const providerUuid = fin.Application.me.uuid;
+                    const runtime = await fin.System.getVersion();
+                    if (providerUuid !== `${manifestUuid}-${runtime}`) {
+                        console.warn(`Ignoring ${this._serviceName}Manifest attribute, manifest mis-match`);
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return (serviceManifest && serviceManifest.serviceConfiguration) || null;
     }
 
     private onApplicationClosed(event: ApplicationEvent<'application', 'closed'>): void {
